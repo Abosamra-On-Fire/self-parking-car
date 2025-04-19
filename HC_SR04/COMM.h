@@ -2,13 +2,12 @@
 #ifndef COMM_h
 #define COMM_h
 
-#include <avr/io.h>
+#include <stdint.h>
+#include <stdbool.h>
 
-
-char FindPort(uint8_t Pin);
-uint8_t FindPin(uint8_t Pin);
-uint8_t digital_write(uint8_t Pin, bool dir);
-void SetPin(uint8_t Pin, bool dir);
+void digital_write(uint8_t pin, bool state);
+bool digital_read(uint8_t pin);
+void set_pin(uint8_t pin, bool dir);
 
 
 #endif

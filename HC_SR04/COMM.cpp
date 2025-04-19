@@ -1,74 +1,66 @@
 
-#include "COMM.h"
+#include <COMM.h>
 
-char FindPort(uint8_t Pin) {
-    if (Pin <= 7) {
-        return 'D';
-    }else if (Pin <= 13) {
-        return 'B';
-    }else if (Pin <= 19) {
-        return 'C';
-    }else {
-        return 'N';
-    }
-}
+#define GPIO_OUT_W1TS_REG  (*((volatile uint32_t *)0x3FF44008)) 
+#define GPIO_OUT_W1TC_REG  (*((volatile uint32_t *)0x3FF4400C)) 
+#define GPIO_ENABLE_W1TS_REG (*((volatile uint32_t *)0x3FF44024))
+#define GPIO_ENABLE_W1TC_REG (*((volatile uint32_t *)0x3FF44028))
+#define GPIO_IN_REG        (*((volatile uint32_t *)0x3FF4403C))
+#define GPIO_IN1_REG       (*((volatile uint32_t *)0x3FF44040))
 
-uint8_t FindPin(uint8_t Pin) {
-    if (Pin <= 7) {
-        return Pin;
-    }else if (Pin<= 13) {
-        return Pin - 8;
-    }else if (Pin<= 19) {
-        return Pin-14;
-    }else {
-        return -1;
-    }
-}
+#define GPIO_OUT1_W1TS_REG (*((volatile uint32_t *)0x3FF44014))
+#define GPIO_OUT1_W1TC_REG (*((volatile uint32_t *)0x3FF44018))
+#define GPIO_ENABLE1_W1TS_REG (*((volatile uint32_t *)0x3FF44030))
+#define GPIO_ENABLE1_W1TC_REG (*((volatile uint32_t *)0x3FF44034))
 
 
+void set_pin(uint8_t pin, bool dir) {
+    if (pin > 39) return;
 
-uint8_t digital_write(uint8_t Pin, bool dir) {
-    char port = FindPort(Pin);
-    uint8_t pin = FindPin(Pin);
-
-    if (dir) {
-        if (port == 'D') {
-            PORTD |= (1 << pin);
-        }else if (port == 'B') {
-            PORTB |= (1 << pin);
-        }else if (port == 'C') {
-            PORTC |= (1 << pin);
+    if (pin < 32) {
+        if (dir) {
+            GPIO_ENABLE_W1TS_REG = (1 << pin);
         }
-    }else {
-        if (port == 'D') {
-            PORTD &= ~(1 << pin);
-        }else if (port == 'B') {
-            PORTB &= ~(1 << pin);
-        }else if (port == 'C') {
-            PORTC &= ~(1 << pin);
+        else {
+            GPIO_ENABLE_W1TC_REG = (1 << pin);
+        }
+    }
+    else {
+        if (dir) {
+            GPIO_ENABLE1_W1TS_REG = (1 << (pin - 32));
+        }
+        else {
+            GPIO_ENABLE1_W1TC_REG = (1 << (pin - 32));
         }
     }
 }
 
-void SetPin(uint8_t Pin,bool dir) {
-    char port = FindPort(Pin);
-    uint8_t pin = FindPin(Pin);
+void digital_write(uint8_t pin, bool state) {
+    if (pin > 39) return;
+    if (pin < 32) {
+        if (state) {
+            GPIO_OUT_W1TS_REG = (1 << pin);
+        }
+        else {
+            GPIO_OUT_W1TC_REG = (1 << pin);
+        }
+    }
+    else {
+        if (state) {
+            GPIO_OUT1_W1TS_REG = (1 << (pin - 32));
+        }
+        else {
+            GPIO_OUT1_W1TC_REG = (1 << (pin - 32));
+        }
+    }
+}
 
-    if (dir) {
-        if (port == 'D') {
-            DDRD |= (1 << pin);
-        }else if (port == 'B') {
-            DDRB |= (1 << pin);
-        }else if (port == 'C') {
-            DDRC |= (1 << pin);
-        }
-    }else {
-        if (port == 'D') {
-            DDRD &= ~(1 << pin);
-        }else if (port == 'B') {
-            DDRB &= ~(1 << pin);
-        }else if (port == 'C') {
-            DDRC &= ~(1 << pin);
-        }
+bool digital_read(uint8_t pin) {
+    if (pin > 39) return;
+    if (pin < 32) {
+        return (GPIO_IN_REG >> pin) & 0x1;
+    }
+    else {
+        return (GPIO_IN1_REG >> (pin - 32)) & 0x1;
     }
 }
